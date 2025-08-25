@@ -4,17 +4,16 @@ import WebsiteHeader from './components/WebsiteHeader.vue'
 
 <template>
   <div class="main-layout">
-    <WebsiteHeader></WebsiteHeader>
+    <WebsiteHeader class="main-header"></WebsiteHeader>
+    <div class="main-content">
+      <RouterView></RouterView>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.main-layout {
-  display: grid;
-  grid-template-areas:
-    'header'
-    'content'
-    'footer';
-  grid-template-rows: auto 1fr auto;
+.main-content {
+  padding: 1em;
+  color: #5d4037;
 }
 </style>

@@ -1,5 +1,9 @@
 :root {
-  font-family: Arial, sans-serif;
+  font-family: 'Montserrat', sans-serif;
+  --color-background: #FFFBF5;
+  --color-foreground: #5D4037;
+  --color-accent: #E5A86E;
+  --color-disabled: #F3D1B9;
 }
 
 html,
