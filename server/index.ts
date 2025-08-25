@@ -1,4 +1,5 @@
 import { serve } from 'bun'
+import { signJwt } from './src/jwt'
 
 const PORT = process.env.PORT || 3001
 
@@ -26,7 +27,7 @@ serve({
           keyPresses: { key: string; time: number }[]
         }
         console.log(keyPresses)
-        return Response.json({ token: '123456' })
+        return Response.json({ token: await signJwt({ aud: username }) })
       },
     },
   },

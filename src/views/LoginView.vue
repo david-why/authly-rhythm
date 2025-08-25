@@ -20,6 +20,8 @@ const loginDisabled = computed(() => state.value !== 'username' && state.value !
 const username = ref('')
 const keyPresses = ref<{ key: string; time: number }[]>([])
 
+const password = computed(() => keyPresses.value.map((kp) => `${kp.key}(${kp.time})`).join(','))
+
 async function handleSubmit() {
   if (state.value === 'done') {
     const res = await fetch(`${API_BASE_URL}/auth/signin`, {
@@ -47,6 +49,7 @@ async function handleSubmit() {
     alert('Username must contain only letters.')
     return
   }
+  keyPresses.value = []
   state.value = 'signingIn'
   const res = await fetch(`${API_BASE_URL}/auth/data/${username.value}`)
   if (!res.ok) {
@@ -89,7 +92,6 @@ async function handleSubmit() {
 function onKeyDown(e: KeyboardEvent) {
   console.log(e)
   if (state.value === 'waiting') {
-    keyPresses.value = []
     state.value = 'playing'
     audio?.play()
     startTime = Date.now()
@@ -128,10 +130,11 @@ onBeforeUnmount(() => {
   <h1>Sign in</h1>
   <p>Please sign in using the form below.</p>
   <form @submit.prevent="handleSubmit">
-    <div class="form-grid">
-      <label for="username"><strong>Username</strong></label>
+    <div class="mb-3">
+      <label class="form-label" for="username"><strong>Username</strong></label>
       <input
         id="username"
+        class="form-control"
         type="text"
         name="username"
         placeholder="Enter your username"
@@ -139,21 +142,21 @@ onBeforeUnmount(() => {
         v-model="username"
         :disabled="usernameReadonly"
       />
-      <template v-if="state === 'playing' || state === 'done'">
-        <label><strong>Password</strong></label>
-        <span v-if="state === 'playing'"
-          >Play the rhythm as you set it when you registered! {{ keyPresses.length }} keys
-          pressed</span
-        >
-        <span v-if="state === 'done'"
-          >Completed! {{ keyPresses.length }} keys pressed. Please sign in again!</span
-        >
-      </template>
     </div>
-    <button class="signin-button" :disabled="loginDisabled">Sign In</button>
+    <div class="mb-3" v-if="['loadingAudio', 'waiting', 'playing', 'done'].includes(state)">
+      <label class="form-label"><strong>Password</strong></label>
+      <input id="password" class="form-control" type="text" :value="password" disabled />
+      <div class="form-text" v-if="state === 'loadingAudio'">Loading audio...</div>
+      <div class="form-text" v-else-if="state === 'waiting'">Tap any key when you're ready!</div>
+      <div class="form-text" v-else-if="state === 'playing'">
+        Play the rhythm as you set it when you registered! {{ keyPresses.length }} keys pressed.
+      </div>
+      <div class="form-text" v-else-if="state === 'done'">
+        Completed! {{ keyPresses.length }} keys pressed. Please sign in again!
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" :disabled="loginDisabled">Sign In</button>
   </form>
-  <p v-if="state === 'loadingAudio'">Loading audio...</p>
-  <p v-if="state === 'waiting'">Tap any key when you're ready!</p>
 </template>
 
 <style scoped>
