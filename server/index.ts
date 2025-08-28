@@ -3,6 +3,7 @@ import { Server } from './src/server'
 import * as db from './src/database'
 import { checkCorrect } from './src/rhythm'
 import { uploadToCdn } from '@/cdn'
+import type { AuthRegisterRequest, AuthSignInRequest } from '@/types'
 
 function error(status: number, message: string) {
   return Response.json({ message }, { status })
@@ -20,15 +21,12 @@ server.get('/auth/data/:username', async (req) => {
   const data = await db.getUser(username)
   if (!data) return error(404, 'The user is not found.')
   return Response.json({
-    audio_url: data.audioUrl,
+    audioUrl: data.audioUrl,
   })
 })
 
 server.post('/auth/signin', async (req) => {
-  const { username, keyPresses } = (await req.json()) as {
-    username: string
-    keyPresses: { key: string; time: number }[]
-  }
+  const { username, keyPresses } = (await req.json()) as AuthSignInRequest
   const user = await db.getUser(username)
   if (!user) return error(404, 'The user is not found.')
   const correctKeyPresses = user.keyPresses
@@ -42,7 +40,15 @@ server.post('/auth/signin', async (req) => {
   return Response.json({ token: await signJwt({ aud: username }) })
 })
 
-const uploadingFiles: Record<string, Blob> = {}
+server.post('/auth/register', async (req) => {
+  const { username, audioUrl, keyPresses } = (await req.json()) as AuthRegisterRequest
+  const user = await db.getUser(username)
+  if (user) return error(409, 'User already exists.')
+  await db.createUser({ username, audioUrl, keyPresses })
+  return Response.json({ message: 'User registered successfully.' })
+})
+
+const uploadingFiles: Record<string, ArrayBuffer> = {}
 
 server.post('/auth/upload', async (req) => {
   if (!BASE_URL) return error(500, 'Server base URL not provided')
@@ -52,7 +58,7 @@ server.post('/auth/upload', async (req) => {
   if (isNaN(contentLength) || contentLength > MAX_SIZE) {
     return error(413, 'File too large. Maximum size is 25MB.')
   }
-  const file = await req.body.blob()
+  const file = await req.arrayBuffer()
   const uid = crypto.randomUUID()
   uploadingFiles[uid] = file
   try {
@@ -68,6 +74,8 @@ server.post('/auth/upload', async (req) => {
 server.get('/auth/upload/:uid', async (req) => {
   return new Response(uploadingFiles[req.params.uid] || null)
 })
+
+server.get('/', () => new Response(Bun.file('../dist/index.html')))
 
 server.serve({
   port: PORT,

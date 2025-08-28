@@ -1,15 +1,12 @@
 <script setup lang="ts">
+import RhythmPlay from '@/components/RhythmPlay.vue'
 import { API_BASE_URL } from '@/consts'
 import { useAuth } from '@/stores/auth'
-import type { AuthChartData } from '@/types'
+import type { AuthChartData, RhythmKeyPress } from '@/types'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 const auth = useAuth()
 const router = useRouter()
-
-let audioBlobUrl: string | null = null
-let audio: HTMLAudioElement | null = null
-let startTime: number | null = null
 
 const state = ref<'username' | 'signingIn' | 'loadingAudio' | 'waiting' | 'playing' | 'done'>(
   'username',
@@ -17,8 +14,10 @@ const state = ref<'username' | 'signingIn' | 'loadingAudio' | 'waiting' | 'playi
 const usernameReadonly = computed(() => state.value !== 'username')
 const loginDisabled = computed(() => state.value !== 'username' && state.value !== 'done')
 
+const audioUrl = ref<string | null>(null)
+
 const username = ref('')
-const keyPresses = ref<{ key: string; time: number }[]>([])
+const keyPresses = ref<RhythmKeyPress[]>([])
 
 const password = computed(() => keyPresses.value.map((kp) => `${kp.key}(${kp.time})`).join(','))
 
@@ -42,6 +41,7 @@ async function handleSubmit() {
     }
     alert('Invalid username or password.')
     state.value = 'username'
+    audioUrl.value = null
     return
   }
 
@@ -60,31 +60,7 @@ async function handleSubmit() {
   const data = (await res.json()) as AuthChartData
 
   state.value = 'loadingAudio'
-  const audioRes = await fetch(data.audioUrl)
-  if (!audioRes.ok) {
-    alert('Audio not found.')
-    state.value = 'username'
-    return
-  }
-  const audioData = await audioRes.blob()
-  if (audioBlobUrl) {
-    URL.revokeObjectURL(audioBlobUrl)
-  }
-  audioBlobUrl = URL.createObjectURL(audioData)
-
-  audio = new Audio()
-  await new Promise<void>((resolve, reject) => {
-    if (!audio || !audioBlobUrl) return
-    audio.addEventListener('canplay', () => {
-      resolve()
-    })
-    audio.addEventListener('error', (e) => {
-      console.error(e)
-      reject(e.error || e.message)
-    })
-    audio.src = audioBlobUrl
-    audio.load()
-  })
+  audioUrl.value = data.audioUrl
 
   state.value = 'waiting'
 }
@@ -93,19 +69,16 @@ function onKeyDown(e: KeyboardEvent) {
   console.log(e)
   if (state.value === 'waiting') {
     state.value = 'playing'
-    audio?.play()
-    startTime = Date.now()
-    audio?.addEventListener('ended', () => {
-      state.value = 'done'
-      startTime = null
-    })
-  } else if (state.value === 'playing') {
-    const currentTime = Date.now()
-    if (startTime) {
-      const elapsed = currentTime - startTime
-      keyPresses.value.push({ key: e.key, time: elapsed })
-    }
   }
+}
+
+function onRhythmKeypress(press: RhythmKeyPress) {
+  keyPresses.value.push(press)
+}
+
+function onPlayDone({ keyPresses: presses }: { keyPresses: RhythmKeyPress[] }) {
+  state.value = 'done'
+  keyPresses.value = presses
 }
 
 onMounted(() => {
@@ -113,15 +86,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (audio) {
-    audio.pause()
-    audio.src = ''
-    audio.load()
-  }
-  if (audioBlobUrl) {
-    URL.revokeObjectURL(audioBlobUrl)
-    audioBlobUrl = null
-  }
   window.removeEventListener('keydown', onKeyDown)
 })
 </script>
@@ -157,6 +121,14 @@ onBeforeUnmount(() => {
     </div>
     <button type="submit" class="btn btn-primary" :disabled="loginDisabled">Sign In</button>
   </form>
+  <RhythmPlay
+    v-if="audioUrl"
+    :audio-url="audioUrl"
+    :playing="state === 'playing'"
+    @press="onRhythmKeypress"
+    @done="onPlayDone"
+    :key="audioUrl"
+  ></RhythmPlay>
 </template>
 
 <style scoped>

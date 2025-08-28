@@ -12,6 +12,14 @@ async function getDbUserByUsername(username: string): Promise<DBUser | null> {
   return result[0] || null
 }
 
+function mapUserToDb(user: User): DBUser {
+  return {
+    username: user.username,
+    audio_url: user.audioUrl,
+    key_presses: user.keyPresses,
+  }
+}
+
 export async function getUser(username: string): Promise<User | null> {
   const user = await getDbUserByUsername(username)
   if (!user) return null
@@ -22,4 +30,9 @@ export async function getUser(username: string): Promise<User | null> {
     audioUrl: audio_url,
     keyPresses: key_presses,
   }
+}
+
+export async function createUser(user: User): Promise<void> {
+  const dbUser = mapUserToDb(user)
+  await sql`INSERT INTO users ${sql(dbUser)}`
 }

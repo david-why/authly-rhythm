@@ -35,6 +35,15 @@ const auth = useAuth()
             <li class="nav-item" v-if="!auth.isLoggedIn">
               <RouterLink
                 class="nav-link"
+                :class="{ active: $route.path === '/register' }"
+                :aria-current="$route.path === '/register' ? 'page' : undefined"
+                to="/register"
+                >Register</RouterLink
+              >
+            </li>
+            <li class="nav-item" v-if="!auth.isLoggedIn">
+              <RouterLink
+                class="nav-link"
                 :class="{ active: $route.path === '/login' }"
                 :aria-current="$route.path === '/login' ? 'page' : undefined"
                 to="/login"
@@ -49,9 +58,6 @@ const auth = useAuth()
                 to="/user"
                 >User</RouterLink
               >
-            </li>
-            <li class="nav-item" v-if="auth.isLoggedIn">
-              <a class="nav-link" @click="() => auth.logout()" href="#">Sign out</a>
             </li>
           </ul>
         </div>

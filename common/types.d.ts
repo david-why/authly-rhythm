@@ -5,6 +5,12 @@ export interface AuthSignInRequest {
   keyPresses: RhythmKeyPress[]
 }
 
+export interface AuthRegisterRequest {
+  username: string
+  audioUrl: string
+  keyPresses: RhythmKeyPress[]
+}
+
 export interface RhythmKeyPress {
   key: string
   time: number
