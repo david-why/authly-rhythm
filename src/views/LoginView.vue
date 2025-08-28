@@ -3,6 +3,7 @@ import RhythmPlay from '@/components/RhythmPlay.vue'
 import { API_BASE_URL } from '@/consts'
 import { useAuth } from '@/stores/auth'
 import type { AuthChartData, RhythmKeyPress } from '@/types'
+import { formatKeyPresses } from '@/utils/rhythm'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 const auth = useAuth()
@@ -19,7 +20,7 @@ const audioUrl = ref<string | null>(null)
 const username = ref('')
 const keyPresses = ref<RhythmKeyPress[]>([])
 
-const password = computed(() => keyPresses.value.map((kp) => `${kp.key}(${kp.time})`).join(','))
+const password = computed(() => formatKeyPresses(keyPresses.value))
 
 async function handleSubmit() {
   if (state.value === 'done') {

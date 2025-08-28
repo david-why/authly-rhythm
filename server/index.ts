@@ -14,8 +14,6 @@ const PORT = Number(process.env.PORT) || 3001
 
 const server = new Server()
 
-server.get('/', () => new Response('Hello World'))
-
 server.get('/auth/data/:username', async (req) => {
   const { username } = req.params
   const data = await db.getUser(username)
