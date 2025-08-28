@@ -85,16 +85,17 @@ function onAudioFileChange(event: Event) {
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keydown', onKeyDown, { capture: true })
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keydown', onKeyDown, { capture: true })
 })
 
 function onKeyDown(event: KeyboardEvent) {
   if (isPlaying.value || !showPlayer.value) return
   event.preventDefault()
+  event.stopPropagation()
   isPlaying.value = true
   keyPresses.value = []
 }
