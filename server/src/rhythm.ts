@@ -1,4 +1,4 @@
-import type { RhythmKeyPress } from './types'
+import type { RhythmKeyPress } from '@/types'
 
 export function checkCorrect(keyPresses: RhythmKeyPress[], chart: RhythmKeyPress[]) {
   if (keyPresses.length !== chart.length) return false

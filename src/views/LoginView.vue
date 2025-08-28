@@ -45,8 +45,8 @@ async function handleSubmit() {
     return
   }
 
-  if (!/^[a-zA-Z]+$/.test(username.value)) {
-    alert('Username must contain only letters.')
+  if (!/^[a-zA-Z0-9]+$/.test(username.value)) {
+    alert('Username must contain only letters and numbers.')
     return
   }
   keyPresses.value = []
@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
         Play the rhythm as you set it when you registered! {{ keyPresses.length }} keys pressed.
       </div>
       <div class="form-text" v-else-if="state === 'done'">
-        Completed! {{ keyPresses.length }} keys pressed. Please sign in again!
+        Completed! {{ keyPresses.length }} keys pressed. Please sign in now!
       </div>
     </div>
     <button type="submit" class="btn btn-primary" :disabled="loginDisabled">Sign In</button>

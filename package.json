@@ -7,7 +7,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite -m dev",
+    "dev": "vite -m dev --host 0.0.0.0",
     "dev:server": "cd server && bun run --hot index.ts",
     "build": "run-p type-check:client \"build-only {@}\" --",
     "preview": "vite preview",

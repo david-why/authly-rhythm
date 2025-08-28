@@ -1,6 +1,14 @@
 import { signJwt } from './src/jwt'
 import { Server } from './src/server'
+import * as db from './src/database'
+import { checkCorrect } from './src/rhythm'
+import { uploadToCdn } from '@/cdn'
 
+function error(status: number, message: string) {
+  return Response.json({ message }, { status })
+}
+
+const BASE_URL = process.env.BASE_URL
 const PORT = Number(process.env.PORT) || 3001
 
 const server = new Server()
@@ -9,17 +17,11 @@ server.get('/', () => new Response('Hello World'))
 
 server.get('/auth/data/:username', async (req) => {
   const { username } = req.params
-  return new Response(
-    JSON.stringify({
-      audioUrl: `/api/audio/${username}`,
-    }),
-  )
-})
-
-server.get('/audio/:username', async (req) => {
-  const { username } = req.params
-  console.log(username)
-  return new Response(Bun.file(`/tmp/never.mp3`))
+  const data = await db.getUser(username)
+  if (!data) return error(404, 'The user is not found.')
+  return Response.json({
+    audio_url: data.audioUrl,
+  })
 })
 
 server.post('/auth/signin', async (req) => {
@@ -27,8 +29,44 @@ server.post('/auth/signin', async (req) => {
     username: string
     keyPresses: { key: string; time: number }[]
   }
-  console.log(keyPresses)
+  const user = await db.getUser(username)
+  if (!user) return error(404, 'The user is not found.')
+  const correctKeyPresses = user.keyPresses
+  const isCorrect = checkCorrect(keyPresses, correctKeyPresses)
+  if (!isCorrect) {
+    return error(
+      401,
+      `Incorrect rhythm. Hint: your pattern has ${correctKeyPresses.length} key presses!`,
+    )
+  }
   return Response.json({ token: await signJwt({ aud: username }) })
+})
+
+const uploadingFiles: Record<string, Blob> = {}
+
+server.post('/auth/upload', async (req) => {
+  if (!BASE_URL) return error(500, 'Server base URL not provided')
+  if (!req.body) return error(500, 'Request body not found')
+  const MAX_SIZE = 25 * 1024 * 1024 // 25MB
+  const contentLength = Number(req.headers.get('content-length'))
+  if (isNaN(contentLength) || contentLength > MAX_SIZE) {
+    return error(413, 'File too large. Maximum size is 25MB.')
+  }
+  const file = await req.body.blob()
+  const uid = crypto.randomUUID()
+  uploadingFiles[uid] = file
+  try {
+    const cdnUrl = await uploadToCdn(`${BASE_URL}/auth/upload/${uid}`)
+    return Response.json({ url: cdnUrl })
+  } finally {
+    if (uid in uploadingFiles) {
+      delete uploadingFiles[uid]
+    }
+  }
+})
+
+server.get('/auth/upload/:uid', async (req) => {
+  return new Response(uploadingFiles[req.params.uid] || null)
 })
 
 server.serve({
