@@ -1,4 +1,4 @@
-import type { RhythmKeyPress, User } from '@/types'
+import type { Chart, RhythmKeyPress, User } from '@/types'
 import { sql } from 'bun'
 
 interface DBUser {
@@ -7,8 +7,28 @@ interface DBUser {
   key_presses: RhythmKeyPress[]
 }
 
+interface DBChart {
+  id: number
+  user_username: string
+  title: string
+  audio_url: string
+  key_presses: RhythmKeyPress[]
+  created_at: string
+  updated_at: string
+}
+
 async function getDbUserByUsername(username: string): Promise<DBUser | null> {
   const result = await sql<DBUser[]>`SELECT * FROM users WHERE username = ${username}`
+  return result[0] || null
+}
+
+async function getDbCharts(): Promise<DBChart[]> {
+  const result = await sql<DBChart[]>`SELECT * FROM charts`
+  return result
+}
+
+async function getDbChartById(id: number): Promise<DBChart | null> {
+  const result = await sql<DBChart[]>`SELECT * FROM charts WHERE id = ${id}`
   return result[0] || null
 }
 
@@ -17,6 +37,18 @@ function mapUserToDb(user: User): DBUser {
     username: user.username,
     audio_url: user.audioUrl,
     key_presses: user.keyPresses,
+  }
+}
+
+function mapChartFromDb(dbChart: DBChart): Chart {
+  return {
+    id: dbChart.id,
+    userUsername: dbChart.user_username,
+    title: dbChart.title,
+    audioUrl: dbChart.audio_url,
+    keyPresses: dbChart.key_presses,
+    createdAt: dbChart.created_at,
+    updatedAt: dbChart.updated_at,
   }
 }
 
@@ -35,4 +67,15 @@ export async function getUser(username: string): Promise<User | null> {
 export async function createUser(user: User): Promise<void> {
   const dbUser = mapUserToDb(user)
   await sql`INSERT INTO users ${sql(dbUser)}`
+}
+
+export async function getCharts(): Promise<Chart[]> {
+  const charts = await getDbCharts()
+  return charts.map(mapChartFromDb)
+}
+
+export async function getChart(id: number): Promise<Chart | null> {
+  const chart = await getDbChartById(id)
+  if (!chart) return null
+  return mapChartFromDb(chart)
 }

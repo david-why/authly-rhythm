@@ -1,7 +1,46 @@
 <script setup lang="ts">
-import { ASSETS } from '@/consts'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import { API_BASE_URL, ASSETS } from '@/consts'
 import { useAuth } from '@/stores/auth'
+import type { Chart } from '@/types'
+import { computed, onMounted, ref } from 'vue'
 const auth = useAuth()
+
+const chartsLoading = ref(false)
+const chartError = ref('')
+const charts = ref<Chart[]>([])
+
+const displayCharts = computed(() =>
+  charts.value.map((chart) => {
+    const createdAt = new Date(chart.createdAt)
+    return {
+      ...chart,
+      createdAt,
+      displayCreatedAt: createdAt.toLocaleString(),
+      isoCreatedAt: createdAt.toISOString(),
+    }
+  }),
+)
+
+async function updateCharts() {
+  chartsLoading.value = true
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/charts`)
+    if (!res.ok) {
+      chartError.value = `Error fetching charts: ${res.status} ${res.statusText}`
+      return
+    }
+    const data = await res.json()
+    charts.value = data
+  } finally {
+    chartsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  updateCharts()
+})
 </script>
 
 <template>
@@ -17,9 +56,38 @@ const auth = useAuth()
     you registered.
   </p>
   <h2>Profile</h2>
-  <p v-if="auth.isLoggedIn">You are logged in as {{ auth.username }}.</p>
+  <p v-if="auth.isLoggedIn">
+    You are logged in as <strong>{{ auth.username }}</strong
+    >. Welcome back!
+  </p>
   <p v-else>
     You are not logged in. <RouterLink to="/login">Login</RouterLink> or
     <RouterLink to="/register">register an account</RouterLink> to upload and play charts!
+  </p>
+  <div class="clearfix"></div>
+  <h2>Recent charts</h2>
+  <p class="alert alert-danger" v-if="chartError">{{ chartError }}</p>
+  <p class="alert alert-info" v-if="chartsLoading"><LoadingSpinner /> Loading charts...</p>
+  <div v-else-if="charts.length">
+    <div class="card shadow" v-for="chart in displayCharts" :key="chart.id">
+      <div class="card-body">
+        <h5 class="card-title">{{ chart.title }}</h5>
+        <h6 class="card-subtitle text-body-secondary mb-2">
+          Created by {{ chart.userUsername }} |
+          <time :datetime="chart.isoCreatedAt">{{ chart.displayCreatedAt }}</time>
+        </h6>
+        <ul class="card-text mb-2">
+          <li>Key presses: {{ chart.keyPresses.length }}</li>
+        </ul>
+        <RouterLink
+          class="card-link btn btn-primary pt-1 pb-1"
+          :to="{ name: 'play', params: { id: chart.id } }"
+          >Play</RouterLink
+        >
+      </div>
+    </div>
+  </div>
+  <p class="alert alert-info" v-else>
+    <i class="bi bi-info-circle"></i> No charts found. Create the first one!
   </p>
 </template>

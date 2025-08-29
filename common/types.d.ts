@@ -25,3 +25,13 @@ export interface User {
   audioUrl: string
   keyPresses: RhythmKeyPress[]
 }
+
+export interface Chart {
+  id: number
+  userUsername: string
+  title: string
+  audioUrl: string
+  keyPresses: RhythmKeyPress[]
+  createdAt: string
+  updatedAt: string
+}

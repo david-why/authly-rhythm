@@ -13,7 +13,7 @@
         "outDir": "./dist"
     },
     "include": [
-        "./types.d.ts"
+        "./**/*.ts"
     ],
     "exclude": [
         "node_modules",

@@ -7,6 +7,7 @@ const { audioUrl, playing } = defineProps<{
   playing: boolean
 }>()
 const emit = defineEmits<{
+  start: [startTime: number]
   press: [keyPress: RhythmKeyPress]
   done: [{ keyPresses: RhythmKeyPress[] }]
 }>()
@@ -52,6 +53,7 @@ function requestPlay() {
   audioPlayer.value.play()
   startTime = Date.now()
   keyPresses = []
+  emit('start', startTime)
 }
 
 function requestStop() {

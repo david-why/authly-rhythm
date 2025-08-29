@@ -73,6 +73,16 @@ server.get('/auth/upload/:uid', async (req) => {
   return new Response(uploadingFiles[req.params.uid] || null)
 })
 
+server.get('/charts', async () => {
+  const charts = await db.getCharts()
+  return Response.json(charts)
+})
+
+server.get('/charts/:id', async (req) => {
+  const chart = await db.getChart(Number(req.params.id))
+  return Response.json(chart)
+})
+
 server.get('/', () => new Response(Bun.file('../dist/index.html')))
 
 server.serve({

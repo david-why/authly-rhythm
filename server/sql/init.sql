@@ -3,3 +3,13 @@ CREATE TABLE IF NOT EXISTS users (
   audio_url TEXT NOT NULL,
   key_presses JSONB NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS charts (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_username TEXT NOT NULL REFERENCES users(username),
+  title TEXT NOT NULL,
+  audio_url TEXT NOT NULL,
+  key_presses JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
