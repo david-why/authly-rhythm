@@ -66,33 +66,35 @@ onMounted(() => {
   </p>
   <p v-else>
     You are not logged in. <RouterLink to="/login">Login</RouterLink> or
-    <RouterLink to="/register">register an account</RouterLink> to upload and play charts!
+    <RouterLink to="/register">register an account</RouterLink> to create and play charts!
   </p>
   <div class="clearfix"></div>
-  <h2>Recent charts</h2>
-  <p class="alert alert-danger" v-if="chartError">{{ chartError }}</p>
-  <p class="alert alert-info" v-else-if="chartsLoading"><LoadingSpinner /> Loading charts...</p>
-  <div v-else-if="charts.length">
-    <div class="mb-3 card shadow-sm" v-for="chart in displayCharts" :key="chart.id">
-      <div class="card-body">
-        <h5 class="card-title">{{ chart.title }}</h5>
-        <h6 class="card-subtitle text-body-secondary mb-2">
-          Created by {{ chart.userUsername }} |
-          <time :datetime="chart.isoCreatedAt">{{ chart.displayCreatedAt }}</time>
-        </h6>
-        <ul class="card-text mb-2">
-          <li>Key presses: {{ chart.keyPresses.length }}</li>
-        </ul>
-        <RouterLink
-          class="card-link btn btn-primary pt-1 pb-1"
-          :to="{ name: 'play', params: { id: chart.id } }"
-          >Play</RouterLink
-        >
+  <template v-if="auth.isLoggedIn">
+    <h2>Recent charts</h2>
+    <p class="alert alert-danger" v-if="chartError">{{ chartError }}</p>
+    <p class="alert alert-info" v-else-if="chartsLoading"><LoadingSpinner /> Loading charts...</p>
+    <div v-else-if="charts.length">
+      <div class="mb-3 card shadow-sm" v-for="chart in displayCharts" :key="chart.id">
+        <div class="card-body">
+          <h5 class="card-title">{{ chart.title }}</h5>
+          <h6 class="card-subtitle text-body-secondary mb-2">
+            Created by {{ chart.userUsername }} |
+            <time :datetime="chart.isoCreatedAt">{{ chart.displayCreatedAt }}</time>
+          </h6>
+          <ul class="card-text mb-2">
+            <li>Key presses: {{ chart.keyPresses.length }}</li>
+          </ul>
+          <RouterLink
+            class="card-link btn btn-primary pt-1 pb-1"
+            :to="{ name: 'play', params: { id: chart.id } }"
+            >Play</RouterLink
+          >
+        </div>
       </div>
+      <p><RouterLink to="/chart">Create your own chart here!</RouterLink></p>
     </div>
-    <p><RouterLink to="/chart">Create your own chart here!</RouterLink></p>
-  </div>
-  <p class="alert alert-info" v-else>
-    <i class="bi bi-info-circle"></i> No charts found. Create the first one!
-  </p>
+    <p class="alert alert-info" v-else>
+      <i class="bi bi-info-circle"></i> No charts found. Create the first one!
+    </p>
+  </template>
 </template>
