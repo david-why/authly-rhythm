@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import RhythmPlay from '@/components/RhythmPlay.vue'
 import { API_BASE_URL } from '@/consts'
 import { useAuth } from '@/stores/auth'
@@ -30,6 +31,7 @@ const notesString = computed(() => formatKeyPresses(keyPresses.value))
 const isCharted = ref(false)
 const isPlaying = ref(false)
 const errorMessage = ref('')
+const isCreating = ref(false)
 
 const isFormComplete = computed(
   () => title.value.trim().length > 0 && isCharted.value && !!audioFile.value,
@@ -87,43 +89,49 @@ async function onSubmit() {
 
   errorMessage.value = ''
 
-  const uploadRes = await fetch(`${API_BASE_URL}/auth/upload`, {
-    method: 'POST',
-    body: audioFile.value,
-    headers: {
-      'Content-Type': audioFile.value.type,
-    },
-  })
-  if (!uploadRes.ok) {
-    const error = await uploadRes.text()
-    console.error('Upload error:', error)
-    errorMessage.value = 'Failed to upload audio file. Please try again later.'
-    return
+  isCreating.value = true
+
+  try {
+    const uploadRes = await fetch(`${API_BASE_URL}/auth/upload`, {
+      method: 'POST',
+      body: audioFile.value,
+      headers: {
+        'Content-Type': audioFile.value.type,
+      },
+    })
+    if (!uploadRes.ok) {
+      const error = await uploadRes.text()
+      console.error('Upload error:', error)
+      errorMessage.value = 'Failed to upload audio file. Please try again later.'
+      return
+    }
+    const uploadData = (await uploadRes.json()) as { url: string }
+    const audioUrl = uploadData.url
+
+    const res = await fetch(`${API_BASE_URL}/charts`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: title.value,
+        audioUrl: audioUrl,
+        keyPresses: keyPresses.value,
+      } satisfies ChartCreateRequest),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth.token}`,
+      },
+    })
+    if (!res.ok) {
+      const error = await res.text()
+      console.error('Create chart error:', error)
+      errorMessage.value = 'Failed to create the chart. Please try again later.'
+    }
+
+    const { id } = (await res.json()) as ChartCreateResponse
+
+    router.push({ name: 'play', params: { id } })
+  } finally {
+    isCreating.value = false
   }
-  const uploadData = (await uploadRes.json()) as { url: string }
-  const audioUrl = uploadData.url
-
-  const res = await fetch(`${API_BASE_URL}/charts`, {
-    method: 'POST',
-    body: JSON.stringify({
-      title: title.value,
-      audioUrl: audioUrl,
-      keyPresses: keyPresses.value,
-    } satisfies ChartCreateRequest),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth.token}`,
-    },
-  })
-  if (!res.ok) {
-    const error = await res.text()
-    console.error('Create chart error:', error)
-    errorMessage.value = 'Failed to create the chart. Please try again later.'
-  }
-
-  const { id } = (await res.json()) as ChartCreateResponse
-
-  router.push({ name: 'play', params: { id } })
 }
 </script>
 
@@ -168,8 +176,15 @@ async function onSubmit() {
       >
     </div>
     <div class="form-row mb-3">
-      <button type="submit" class="btn btn-primary me-2" :disabled="!isFormComplete">Create</button>
-      <button type="button" class="btn btn-danger" :disabled="!isCharted" @click="onReset">
+      <button type="submit" class="btn btn-primary me-2" :disabled="!isFormComplete || isCreating">
+        <LoadingSpinner v-if="isCreating" /> Create
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        :disabled="!isCharted || isCreating"
+        @click="onReset"
+      >
         Reset
       </button>
     </div>

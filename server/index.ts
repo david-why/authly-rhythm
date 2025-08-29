@@ -108,6 +108,20 @@ server.get('/charts/:id', async (req) => {
   return Response.json(chart)
 })
 
+server.delete('/charts/:id', async (req) => {
+  const { aud: username } = await ensureAuth(req)
+  const { id } = req.params
+  const chart = await db.getChart(Number(id))
+  if (!chart) {
+    return error(404, 'Chart not found')
+  }
+  if (chart.userUsername !== username) {
+    return error(403, 'Forbidden')
+  }
+  await db.deleteChart(Number(id))
+  return Response.json({ message: 'Chart deleted successfully' })
+})
+
 server.post('/charts', async (req) => {
   const { aud: username } = await ensureAuth(req)
   const reqData = (await req.json()) as ChartCreateRequest

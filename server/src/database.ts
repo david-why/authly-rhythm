@@ -24,7 +24,9 @@ async function getDbUserByUsername(username: string): Promise<DBUser | null> {
 
 async function getDbCharts({ page, limit }: PaginationParams): Promise<DBChart[]> {
   const offset = (page - 1) * limit
-  const result = await sql<DBChart[]>`SELECT * FROM charts LIMIT ${limit} OFFSET ${offset}`
+  const result = await sql<
+    DBChart[]
+  >`SELECT * FROM charts ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
   return result
 }
 
@@ -84,6 +86,10 @@ export async function getChart(id: number): Promise<Chart | null> {
   const chart = await getDbChartById(id)
   if (!chart) return null
   return mapChartFromDb(chart)
+}
+
+export async function deleteChart(id: number): Promise<void> {
+  await sql`DELETE FROM charts WHERE id = ${id}`
 }
 
 export async function createChart(

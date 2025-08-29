@@ -91,6 +91,22 @@ function startPlay() {
   timerId.value = setInterval(onPlayTick, 10)
 }
 
+async function onDeleteChart() {
+  if (!chart.value) return
+  if (!confirm('Are you sure you want to delete this chart?')) return
+  const res = await fetch(`${API_BASE_URL}/charts/${chart.value.id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+    },
+  })
+  if (!res.ok) {
+    errorMessage.value = `Error deleting chart: ${res.status} ${res.statusText}`
+    return
+  }
+  router.push('/')
+}
+
 onMounted(() => {
   if (!auth.isLoggedIn) {
     router.push('/login')
@@ -157,9 +173,23 @@ function onPlayerDone() {
       Chart created by: <strong>{{ chart.userUsername }}</strong>
     </p>
     <p>Click on the button below to start playing this chart!</p>
-    <button class="btn btn-success" role="button" @click="startPlay" :disabled="isPlaying">
-      Play!
-    </button>
+    <div>
+      <button
+        class="ps-3 pe-3 btn btn-success"
+        role="button"
+        @click="startPlay"
+        :disabled="isPlaying"
+      >
+        Play!
+      </button>
+      <button
+        v-if="auth.username === chart.userUsername"
+        class="ms-2 btn btn-danger"
+        @click="onDeleteChart"
+      >
+        Delete
+      </button>
+    </div>
     <pre v-if="shouldShowStats || true" class="mt-3" v-text="statsText"></pre>
     <div v-for="note in displayNotes" :key="`${note.key}@${note.time}`">
       <div class="row align-items-center">
