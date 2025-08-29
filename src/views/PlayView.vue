@@ -81,9 +81,7 @@ function startPlay() {
   score.value = 0
   currentKeyIndex.value = 0
   isPlaying.value = true
-  timerId.value = setInterval(() => {
-    updateNotesCounter.value++
-  }, 10)
+  timerId.value = setInterval(onPlayTick, 10)
 }
 
 onMounted(() => {
@@ -93,6 +91,20 @@ onMounted(() => {
 onBeforeUnmount(() => {
   timerId.value = null
 })
+
+function onPlayTick() {
+  if (!chart.value || !startTime.value) return
+  updateNotesCounter.value++
+  while (currentKeyIndex.value < chart.value.keyPresses.length) {
+    const note = chart.value.keyPresses[currentKeyIndex.value]
+    if (Date.now() - startTime.value >= note.time + 200) {
+      lastVerdict.value = 'MISS'
+      currentKeyIndex.value++
+    } else {
+      break
+    }
+  }
+}
 
 function onPlayerStart(time: number) {
   startTime.value = time
@@ -105,6 +117,9 @@ function onPlayerPress({ key, time }: RhythmKeyPress) {
   if (note.key === key && Math.abs(time - note.time) <= 200) {
     score.value++
     lastVerdict.value = `HIT    ${time > note.time ? '+' : ''}${time - note.time}`
+  } else if (note.time - time > 400) {
+    // this press is waaaaay too early, just ignore it
+    currentKeyIndex.value--
   } else if (note.key !== key) {
     lastVerdict.value = 'MISS'
   } else if (time > note.time) {
@@ -138,7 +153,7 @@ function onPlayerDone() {
     <div v-for="note in displayNotes" :key="`${note.key}@${note.time}`">
       <div class="row align-items-center">
         <div class="col-1">{{ note.key }}</div>
-        <div class="col">
+        <div class="col col-sm-4 col-md-3">
           <div
             class="progress"
             role="progressbar"
