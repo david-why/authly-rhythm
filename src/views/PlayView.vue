@@ -35,7 +35,7 @@ const maxScore = computed(() => {
 const lastVerdict = ref('-')
 const statsText = computed(() => {
   if (!chart.value) return ''
-  return `SCORE  ${score.value.toString().padStart(5, '0')} / ${maxScore.value.toString().padStart(5, '0')}\nTIME   --:-- / --:--\n\n--- ${lastVerdict.value} ---`
+  return `SCORE  ${score.value.toString().padStart(5, '0')} / ${maxScore.value.toString().padStart(5, '0')}\n\n--- ${lastVerdict.value} ---`
 })
 
 const displayNotes = computed(() => {
