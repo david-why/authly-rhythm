@@ -30,6 +30,15 @@ const auth = useAuth()
                 >Home</RouterLink
               >
             </li>
+            <li class="nav-item" v-if="auth.isLoggedIn">
+              <RouterLink
+                class="nav-link"
+                :class="{ active: $route.path === '/chart' }"
+                :aria-current="$route.path === '/chart' ? 'page' : undefined"
+                to="/chart"
+                >Chart</RouterLink
+              >
+            </li>
           </ul>
           <ul class="navbar-nav">
             <li class="nav-item" v-if="!auth.isLoggedIn">
