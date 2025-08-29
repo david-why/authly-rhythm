@@ -3,12 +3,25 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { API_BASE_URL, ASSETS } from '@/consts'
 import { useAuth } from '@/stores/auth'
 import type { Chart } from '@/types'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 const auth = useAuth()
+
+const CHART_LIMIT = 10
 
 const chartsLoading = ref(false)
 const chartError = ref('')
 const charts = ref<Chart[]>([])
+const chartsPage = ref(1)
+const chartTotal = ref(0)
+const chartMaxPage = computed(() => Math.ceil(chartTotal.value / CHART_LIMIT))
+
+watch(
+  chartsPage,
+  () => {
+    updateCharts()
+  },
+  { immediate: true },
+)
 
 const displayCharts = computed(() =>
   charts.value.map((chart) => {
@@ -23,28 +36,29 @@ const displayCharts = computed(() =>
 )
 
 async function updateCharts() {
+  if (!auth.isLoggedIn) return
   chartsLoading.value = true
 
   try {
-    const res = await fetch(`${API_BASE_URL}/charts`, {
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
+    const res = await fetch(
+      `${API_BASE_URL}/charts?page=${chartsPage.value}&limit=${CHART_LIMIT}`,
+      {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
       },
-    })
+    )
     if (!res.ok) {
       chartError.value = `Error fetching charts: ${res.status} ${res.statusText}`
       return
     }
     const data = await res.json()
     charts.value = data
+    chartTotal.value = Number(res.headers.get('X-Total-Count') || '0')
   } finally {
     chartsLoading.value = false
   }
 }
-
-onMounted(() => {
-  updateCharts()
-})
 </script>
 
 <template>
@@ -58,6 +72,12 @@ onMounted(() => {
     The authentication system is based on rhythm passwords, which means you can log in by playing a
     specific rhythm pattern that you create while listening to an audio clip that you uploaded when
     you registered.
+  </p>
+  <p>
+    For more information,
+    <a href="https://github.com/david-why/authly-rhythm/blob/main/README.md" target="_blank"
+      >check out the documentation here!</a
+    >
   </p>
   <h2>Profile</h2>
   <p v-if="auth.isLoggedIn">
@@ -91,6 +111,37 @@ onMounted(() => {
           >
         </div>
       </div>
+      <small class="text-muted">Page {{ chartsPage }} of {{ chartMaxPage }}</small>
+      <nav aria-label="Chart pagination">
+        <ul class="pagination">
+          <li class="page-item">
+            <a class="page-link" @click="chartsPage = 1" :class="{ disabled: chartsPage === 1 }"
+              >First</a
+            >
+          </li>
+          <li class="page-item">
+            <a class="page-link" @click="chartsPage--" :class="{ disabled: chartsPage === 1 }"
+              >Previous</a
+            >
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              @click="chartsPage++"
+              :class="{ disabled: chartsPage === chartMaxPage }"
+              >Next</a
+            >
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              @click="chartsPage = chartMaxPage"
+              :class="{ disabled: chartsPage === chartMaxPage }"
+              >Last</a
+            >
+          </li>
+        </ul>
+      </nav>
       <p><RouterLink to="/chart">Create your own chart here!</RouterLink></p>
     </div>
     <p class="alert alert-info" v-else>

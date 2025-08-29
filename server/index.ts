@@ -19,6 +19,13 @@ async function ensureAuth(req: Request) {
   }
 }
 
+function getPagination(req: Request) {
+  const url = new URL(req.url)
+  const page = Number(url.searchParams.get('page')) || 1
+  const limit = Math.min(Number(url.searchParams.get('limit')) || 10, 50)
+  return { page, limit }
+}
+
 function error(status: number, message: string) {
   return Response.json({ message }, { status })
 }
@@ -89,8 +96,10 @@ server.get('/auth/upload/:uid', async (req) => {
 
 server.get('/charts', async (req) => {
   await ensureAuth(req)
-  const charts = await db.getCharts()
-  return Response.json(charts)
+  const { page, limit } = getPagination(req)
+  const charts = await db.getCharts({ page, limit })
+  const count = await db.getChartCount()
+  return Response.json(charts, { headers: { 'X-Total-Count': `${count}` } })
 })
 
 server.get('/charts/:id', async (req) => {

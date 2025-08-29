@@ -1,4 +1,4 @@
-import type { Chart, RhythmKeyPress, User } from '@/types'
+import type { Chart, PaginationParams, RhythmKeyPress, User } from '@/types'
 import { sql } from 'bun'
 
 interface DBUser {
@@ -22,8 +22,9 @@ async function getDbUserByUsername(username: string): Promise<DBUser | null> {
   return result[0] || null
 }
 
-async function getDbCharts(): Promise<DBChart[]> {
-  const result = await sql<DBChart[]>`SELECT * FROM charts`
+async function getDbCharts({ page, limit }: PaginationParams): Promise<DBChart[]> {
+  const offset = (page - 1) * limit
+  const result = await sql<DBChart[]>`SELECT * FROM charts LIMIT ${limit} OFFSET ${offset}`
   return result
 }
 
@@ -69,9 +70,14 @@ export async function createUser(user: User): Promise<void> {
   await sql`INSERT INTO users ${sql(dbUser)}`
 }
 
-export async function getCharts(): Promise<Chart[]> {
-  const charts = await getDbCharts()
+export async function getCharts({ page, limit }: PaginationParams): Promise<Chart[]> {
+  const charts = await getDbCharts({ page, limit })
   return charts.map(mapChartFromDb)
+}
+
+export async function getChartCount(): Promise<number> {
+  const result = await sql`SELECT COUNT(*) FROM charts`
+  return Number(result[0].count)
 }
 
 export async function getChart(id: number): Promise<Chart | null> {

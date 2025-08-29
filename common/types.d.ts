@@ -45,3 +45,8 @@ export interface ChartCreateRequest {
 export interface ChartCreateResponse {
   id: number
 }
+
+export interface PaginationParams {
+  page: number
+  limit: number
+}
