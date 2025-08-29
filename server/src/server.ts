@@ -14,15 +14,43 @@ type BunRoutesType = Record<
   }
 >
 
+export class HTTPError extends Error {
+  constructor(
+    public status: number,
+    message?: string,
+  ) {
+    super(message)
+    this.name = 'HTTPError'
+  }
+}
+
 export class Server {
   private routes: ServerRoute[] = []
+
+  private makeHandler<T extends string = string>(
+    handler: Bun.RouterTypes.RouteHandler<T>,
+  ): Bun.RouterTypes.RouteHandler<T> {
+    return async (req: Bun.BunRequest, server: Bun.Server) => {
+      try {
+        const res = await handler(req, server)
+        return res
+      } catch (e) {
+        if (e instanceof HTTPError) {
+          return Response.json({ message: e.message }, { status: e.status })
+        }
+        console.error(`Error handling request ${req.method} ${req.url}`)
+        console.error(e)
+        return Response.json({ message: 'Internal server error' }, { status: 500 })
+      }
+    }
+  }
 
   public addRoute<T extends string = string>(
     path: T,
     handler: Bun.RouterTypes.RouteHandler<T>,
     method: Bun.RouterTypes.HTTPMethod = 'GET',
   ) {
-    this.routes.push({ path, method, handler })
+    this.routes.push({ path, method, handler: this.makeHandler(handler) })
   }
 
   public get<T extends string = string>(path: T, handler: Bun.RouterTypes.RouteHandler<T>) {

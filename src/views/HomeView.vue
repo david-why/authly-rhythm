@@ -26,7 +26,11 @@ async function updateCharts() {
   chartsLoading.value = true
 
   try {
-    const res = await fetch(`${API_BASE_URL}/charts`)
+    const res = await fetch(`${API_BASE_URL}/charts`, {
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+      },
+    })
     if (!res.ok) {
       chartError.value = `Error fetching charts: ${res.status} ${res.statusText}`
       return
@@ -67,9 +71,9 @@ onMounted(() => {
   <div class="clearfix"></div>
   <h2>Recent charts</h2>
   <p class="alert alert-danger" v-if="chartError">{{ chartError }}</p>
-  <p class="alert alert-info" v-if="chartsLoading"><LoadingSpinner /> Loading charts...</p>
+  <p class="alert alert-info" v-else-if="chartsLoading"><LoadingSpinner /> Loading charts...</p>
   <div v-else-if="charts.length">
-    <div class="card shadow" v-for="chart in displayCharts" :key="chart.id">
+    <div class="mb-3 card shadow-sm" v-for="chart in displayCharts" :key="chart.id">
       <div class="card-body">
         <h5 class="card-title">{{ chart.title }}</h5>
         <h6 class="card-subtitle text-body-secondary mb-2">
@@ -86,6 +90,7 @@ onMounted(() => {
         >
       </div>
     </div>
+    <p><RouterLink to="/chart">Create your own chart here!</RouterLink></p>
   </div>
   <p class="alert alert-info" v-else>
     <i class="bi bi-info-circle"></i> No charts found. Create the first one!

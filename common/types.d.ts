@@ -35,3 +35,13 @@ export interface Chart {
   createdAt: string
   updatedAt: string
 }
+
+export interface ChartCreateRequest {
+  title: string
+  audioUrl: string
+  keyPresses: RhythmKeyPress[]
+}
+
+export interface ChartCreateResponse {
+  id: number
+}

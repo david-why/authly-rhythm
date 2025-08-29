@@ -90,6 +90,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown, { capture: true })
+  if (audioBlobUrl.value) {
+    URL.revokeObjectURL(audioBlobUrl.value)
+    audioBlobUrl.value = null
+  }
 })
 
 function onKeyDown(event: KeyboardEvent) {

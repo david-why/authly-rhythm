@@ -28,6 +28,11 @@ const router = createRouter({
       name: 'play',
       component: () => import('../views/PlayView.vue'),
     },
+    {
+      path: '/chart',
+      name: 'chart',
+      component: () => import('../views/CreateChartView.vue'),
+    },
   ],
 })
 

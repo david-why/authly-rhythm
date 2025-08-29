@@ -2,9 +2,12 @@
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import RhythmPlay from '@/components/RhythmPlay.vue'
 import { API_BASE_URL } from '@/consts'
+import { useAuth } from '@/stores/auth'
 import type { Chart, RhythmKeyPress } from '@/types'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+const auth = useAuth()
+const router = useRouter()
 const route = useRoute()
 const id = route.params.id as string
 
@@ -66,7 +69,11 @@ const displayNotes = computed(() => {
 })
 
 async function fetchChart() {
-  const res = await fetch(`${API_BASE_URL}/charts/${id}`)
+  const res = await fetch(`${API_BASE_URL}/charts/${id}`, {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+    },
+  })
   if (!res.ok) {
     errorMessage.value = `Error fetching chart: ${res.status} ${res.statusText}`
     return
@@ -85,6 +92,10 @@ function startPlay() {
 }
 
 onMounted(() => {
+  if (!auth.isLoggedIn) {
+    router.push('/login')
+    return
+  }
   fetchChart()
 })
 

@@ -1,9 +1,23 @@
-import { signJwt } from './src/jwt'
-import { Server } from './src/server'
+import { signJwt, verifyJwt } from './src/jwt'
+import { HTTPError, Server } from './src/server'
 import * as db from './src/database'
 import { checkCorrect } from './src/rhythm'
 import { uploadToCdn } from '@/cdn'
-import type { AuthRegisterRequest, AuthSignInRequest } from '@/types'
+import type { AuthRegisterRequest, AuthSignInRequest, ChartCreateRequest } from '@/types'
+
+async function ensureAuth(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    throw new HTTPError(401, 'Unauthorized')
+  }
+  const token = authHeader.replace('Bearer ', '')
+  try {
+    const payload = await verifyJwt<{ aud: string }>(token)
+    return payload
+  } catch {
+    throw new HTTPError(401, 'Unauthorized')
+  }
+}
 
 function error(status: number, message: string) {
   return Response.json({ message }, { status })
@@ -73,14 +87,23 @@ server.get('/auth/upload/:uid', async (req) => {
   return new Response(uploadingFiles[req.params.uid] || null)
 })
 
-server.get('/charts', async () => {
+server.get('/charts', async (req) => {
+  await ensureAuth(req)
   const charts = await db.getCharts()
   return Response.json(charts)
 })
 
 server.get('/charts/:id', async (req) => {
+  await ensureAuth(req)
   const chart = await db.getChart(Number(req.params.id))
   return Response.json(chart)
+})
+
+server.post('/charts', async (req) => {
+  const { aud: username } = await ensureAuth(req)
+  const reqData = (await req.json()) as ChartCreateRequest
+  const id = await db.createChart({ userUsername: username, ...reqData })
+  return Response.json({ id })
 })
 
 server.get('/', () => new Response(Bun.file('../dist/index.html')))

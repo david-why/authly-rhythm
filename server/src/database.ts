@@ -79,3 +79,16 @@ export async function getChart(id: number): Promise<Chart | null> {
   if (!chart) return null
   return mapChartFromDb(chart)
 }
+
+export async function createChart(
+  chart: Omit<Chart, 'id' | 'createdAt' | 'updatedAt'>,
+): Promise<number> {
+  const dbChart: Omit<DBChart, 'id' | 'created_at' | 'updated_at'> = {
+    user_username: chart.userUsername,
+    title: chart.title,
+    audio_url: chart.audioUrl,
+    key_presses: chart.keyPresses,
+  }
+  const result = await sql<[Pick<DBChart, 'id'>]>`INSERT INTO charts ${sql(dbChart)} RETURNING id`
+  return result[0].id
+}

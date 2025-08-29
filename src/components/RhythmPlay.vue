@@ -76,7 +76,7 @@ function onCanPlayThrough() {
 }
 
 function onKeyDown(event: KeyboardEvent) {
-  if (!startTime || !playing) return
+  if (!startTime || !playing || event.repeat) return
 
   const keyPress: RhythmKeyPress = {
     key: event.key,
