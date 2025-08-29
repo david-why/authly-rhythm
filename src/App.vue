@@ -63,7 +63,7 @@ const auth = useAuth()
         </div>
       </div>
     </nav>
-    <main class="container mt-2 bg-body">
+    <main class="container mt-4 bg-body">
       <RouterView></RouterView>
     </main>
   </div>

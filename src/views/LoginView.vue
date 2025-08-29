@@ -40,7 +40,12 @@ async function handleSubmit() {
       router.push('/')
       return
     }
-    alert('Invalid username or password.')
+    let message = 'Invalid username or password.'
+    try {
+      const data = await res.json()
+      message = data.message || message
+    } catch {}
+    alert(message)
     state.value = 'username'
     audioUrl.value = null
     return
